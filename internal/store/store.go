@@ -143,21 +143,43 @@ func (s *Store) ArticleByNumber(lawID string, number int) (models.Article, error
 func (s *Store) DeleteLaw(lawID string) error {
 	return s.db.Update(func(tx *bbolt.Tx) error {
 		_ = tx.Bucket(lawsBucket).Delete([]byte(lawID))
-		prefix1 := lawID + "::"
-		prefix2 := lawID + "-"
-		for _, bucket := range []*bbolt.Bucket{tx.Bucket(articlesBucket), tx.Bucket(sectionsBucket), tx.Bucket(indexBucket)} {
-			var keys [][]byte
-			_ = bucket.ForEach(func(key, value []byte) error {
-				keyStr := string(key)
-				if strings.HasPrefix(keyStr, prefix1) || strings.HasPrefix(keyStr, prefix2) {
-					keys = append(keys, append([]byte(nil), key...))
-				}
-				return nil
-			})
-			for _, key := range keys {
-				_ = bucket.Delete(key)
+
+		var articleKeys [][]byte
+		_ = tx.Bucket(articlesBucket).ForEach(func(key, value []byte) error {
+			var article models.Article
+			if err := json.Unmarshal(value, &article); err == nil && article.LawID == lawID {
+				articleKeys = append(articleKeys, append([]byte(nil), key...))
 			}
+			return nil
+		})
+		for _, key := range articleKeys {
+			_ = tx.Bucket(articlesBucket).Delete(key)
 		}
+
+		var sectionKeys [][]byte
+		_ = tx.Bucket(sectionsBucket).ForEach(func(key, value []byte) error {
+			var section models.Section
+			if err := json.Unmarshal(value, &section); err == nil && section.LawID == lawID {
+				sectionKeys = append(sectionKeys, append([]byte(nil), key...))
+			}
+			return nil
+		})
+		for _, key := range sectionKeys {
+			_ = tx.Bucket(sectionsBucket).Delete(key)
+		}
+
+		indexPrefix := lawID + "::"
+		var indexKeys [][]byte
+		_ = tx.Bucket(indexBucket).ForEach(func(key, value []byte) error {
+			if strings.HasPrefix(string(key), indexPrefix) {
+				indexKeys = append(indexKeys, append([]byte(nil), key...))
+			}
+			return nil
+		})
+		for _, key := range indexKeys {
+			_ = tx.Bucket(indexBucket).Delete(key)
+		}
+
 		return nil
 	})
 }
