@@ -19,6 +19,12 @@ func (e Engine) Search(query string, fuzzy bool, mode string) []models.SearchRes
 	if len(terms) == 0 {
 		terms = []string{query}
 	}
+	validTerms := 0
+	for _, term := range terms {
+		if term != "" {
+			validTerms++
+		}
+	}
 	var results []models.SearchResult
 	for _, article := range e.Articles {
 		matches := 0
@@ -30,7 +36,7 @@ func (e Engine) Search(query string, fuzzy bool, mode string) []models.SearchRes
 				matches++
 			}
 		}
-		if (mode == "or" && matches > 0) || (mode != "or" && matches > 0) {
+		if (mode == "or" && matches > 0) || (mode != "or" && matches == validTerms) {
 			results = append(results, models.SearchResult{
 				LawName: e.LawName,
 				Article: article,

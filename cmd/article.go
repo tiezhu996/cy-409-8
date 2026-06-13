@@ -31,7 +31,7 @@ var articleCmd = &cobra.Command{
 		table := tablewriter.NewWriter(os.Stdout)
 		table.Header("条款", "内容")
 		if articleFrom > 0 && articleTo >= articleFrom {
-			for i := articleFrom; i < articleTo; i++ {
+			for i := articleFrom; i <= articleTo; i++ {
 				article, err := s.ArticleByNumber(law.ID, i)
 				if err == nil {
 					_ = table.Append(fmt.Sprintf("第%d条", article.Number), article.Content)

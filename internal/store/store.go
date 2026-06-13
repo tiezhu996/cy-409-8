@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"go.etcd.io/bbolt"
 
@@ -142,10 +143,13 @@ func (s *Store) ArticleByNumber(lawID string, number int) (models.Article, error
 func (s *Store) DeleteLaw(lawID string) error {
 	return s.db.Update(func(tx *bbolt.Tx) error {
 		_ = tx.Bucket(lawsBucket).Delete([]byte(lawID))
+		prefix1 := lawID + "::"
+		prefix2 := lawID + "-"
 		for _, bucket := range []*bbolt.Bucket{tx.Bucket(articlesBucket), tx.Bucket(sectionsBucket), tx.Bucket(indexBucket)} {
 			var keys [][]byte
 			_ = bucket.ForEach(func(key, value []byte) error {
-				if len(key) >= len(lawID)+2 && string(key[:len(lawID)+2]) == lawID+"::" {
+				keyStr := string(key)
+				if strings.HasPrefix(keyStr, prefix1) || strings.HasPrefix(keyStr, prefix2) {
 					keys = append(keys, append([]byte(nil), key...))
 				}
 				return nil

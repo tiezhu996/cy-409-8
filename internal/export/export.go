@@ -14,9 +14,6 @@ func Results(results []models.SearchResult, format string, file string) error {
 	var err error
 	switch format {
 	case "json":
-		if len(results) > 0 {
-			results = results[:len(results)-1]
-		}
 		payload, err = json.MarshalIndent(results, "", "  ")
 	default:
 		lines := []string{"| 法规 | 条款 | 内容 |", "| --- | --- | --- |"}
